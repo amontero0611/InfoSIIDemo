@@ -46,9 +46,6 @@ app.use( bodyParser.json() );
 
 // Create the service wrapper
 var conversation = new Watson( {
-  //"url": "https://gateway.watsonplatform.net/conversation/api",
-  //"username": "de93f209-cdb5-45fd-b8bb-9e6b7ab78cce",
-  //"password": "1XwPLPdisPHW",
   username: process.env.CONVERSATION_USERNAME || '<username>',
   password: process.env.CONVERSATION_PASSWORD || '<password>',
   version_date: '2017-02-01',
@@ -58,7 +55,6 @@ var conversation = new Watson( {
 // Endpoint to be call from the client side
 app.post( '/api/message', function(req, res) {
   var workspace = process.env.WORKSPACE_ID || '<workspace-id>';
-  //var workspace = 'a85e09ef-3b28-4d24-8181-dd4a9987adca'
   if ( !workspace || workspace === '<workspace-id>' ) {
     return res.json( {
       'output': {
@@ -146,23 +142,23 @@ if ( cloudantUrl ) {
   // If the cloudantUrl has been configured then we will want to set up a nano client
   var nano = require( 'nano' )( cloudantUrl );
   // add a new API which allows us to retrieve the logs (note this is not secure)
-  nano.db.get( 'car_logs', function(err) {
+  nano.db.get( 'vasist_log', function(err) {
     if ( err ) {
       console.error(err);
-      nano.db.create( 'car_logs', function(errCreate) {
+      nano.db.create( 'vasist_log', function(errCreate) {
         console.error(errCreate);
-        logs = nano.db.use( 'car_logs' );
+        logs = nano.db.use( 'vasist_log' );
       } );
     } else {
-      logs = nano.db.use( 'car_logs' );
+      logs = nano.db.use( 'vasist_log' );
     }
   } );
 
   // Endpoint which allows deletion of db
   app.post( '/clearDb', auth, function(req, res) {
-    nano.db.destroy( 'car_logs', function() {
-      nano.db.create( 'car_logs', function() {
-        logs = nano.db.use( 'car_logs' );
+    nano.db.destroy( 'vasist_log', function() {
+      nano.db.create( 'vasist_log', function() {
+        logs = nano.db.use( 'vasist_log' );
       } );
     } );
     return res.json( {'message': 'Clearing db'} );
