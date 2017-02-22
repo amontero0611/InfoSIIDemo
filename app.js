@@ -27,6 +27,14 @@ var uuid = require( 'uuid' );
 var vcapServices = require( 'vcap_services' );
 var basicAuth = require( 'basic-auth-connect' );
 
+//***********  Authentication
+var passport = require('passport'); 
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
+//***********
+
+
 // The app owner may optionally configure a cloudand db to track user input.
 // This cloudand db is not required, the app will operate without it.
 // If logging is enabled the app must also enable basic auth to secure logging
@@ -43,6 +51,68 @@ var app = express();
 // Bootstrap application settings
 app.use( express.static( './public' ) ); // load UI from public folder
 app.use( bodyParser.json() );
+
+//*********************************************************************
+//*********** Authentication ******************************************
+//*********************************************************************
+app.use(cookieParser());
+app.use(session({resave: 'true', saveUninitialized: 'true' , secret: 'keyboard cat'}));
+app.use(passport.initialize());
+app.use(passport.session()); 
+
+passport.serializeUser(function(user, done) {
+   done(null, user);
+}); 
+
+passport.deserializeUser(function(obj, done) {
+   done(null, obj);
+});         
+
+// VCAP_SERVICES contains all the credentials of services bound to
+// this application. For details of its content, please refer to
+// the document or sample of each service.  
+var services = JSON.parse(process.env.VCAP_SERVICES || "{}");
+var ssoConfig = services.SingleSignOn[0]; 
+var client_id = ssoConfig.credentials.clientId;
+var client_secret = ssoConfig.credentials.secret;
+var authorization_url = ssoConfig.credentials.authorizationEndpointUrl;
+var token_url = ssoConfig.credentials.tokenEndpointUrl;
+var issuer_id = ssoConfig.credentials.issuerIdentifier;
+//*******************CALLBACK URL*************************************
+var callback_url = https://infosiidemo.mybluemix.net/auth/sso/callback;        
+
+var OpenIDConnectStrategy = require('passport-idaas-openidconnect').IDaaSOIDCStrategy;
+var Strategy = new OpenIDConnectStrategy({
+                 authorizationURL : authorization_url,
+                 tokenURL : token_url,
+                 clientID : client_id,
+                 scope: 'openid',
+                 response_type: 'code',
+                 clientSecret : client_secret,
+                 callbackURL : callback_url,
+                 skipUserProfile: true,
+                 issuer: issuer_id}, 
+	function(iss, sub, profile, accessToken, refreshToken, params, done)  {
+	         	process.nextTick(function() {
+		profile.accessToken = accessToken;
+		profile.refreshToken = refreshToken;
+		done(null, profile);
+         	})
+}); 
+
+passport.use(Strategy); 
+app.get('/login', passport.authenticate('openidconnect', {})); 
+          
+function ensureAuthenticated(req, res, next) {
+	if(!req.isAuthenticated()) {
+	          	req.session.originalUrl = req.originalUrl;
+		res.redirect('/login');
+	} else {
+		return next();
+	}
+}
+//*********************************************************************
+//*********************************************************************
 
 // Create the service wrapper
 var conversation = new Watson( {
