@@ -28,10 +28,11 @@ var vcapServices = require( 'vcap_services' );
 var basicAuth = require( 'basic-auth-connect' );
 
 //***********  Authentication
+/*
 var passport = require('passport'); 
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
-
+*/
 //***********
 
 
@@ -55,6 +56,7 @@ app.use( bodyParser.json() );
 //*********************************************************************
 //*********** Authentication ******************************************
 //*********************************************************************
+/*
 app.use(cookieParser());
 app.use(session({resave: 'true', saveUninitialized: 'true' , secret: 'keyboard cat'}));
 app.use(passport.initialize());
@@ -111,6 +113,7 @@ function ensureAuthenticated(req, res, next) {
 		return next();
 	}
 }
+*/
 //*********************************************************************
 //*********************************************************************
 
